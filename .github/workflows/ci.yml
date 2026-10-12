@@ -1,0 +1,85 @@
+name: Sisaket Roster V11 CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-tests:
+    name: PHP lint and DB-free regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, iconv, zip, pdo_mysql
+          coverage: none
+      - name: PHP syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          while IFS= read -r -d '' file; do
+            php -l "$file" >/dev/null
+            count=$((count + 1))
+          done < <(find app bin public tests -type f -name '*.php' -print0)
+          php -l index.php >/dev/null
+          php -l config.example.php >/dev/null
+          echo "PHP syntax passed for $((count + 2)) files."
+      - name: Regression tests (no database or real credentials)
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/workflow_v4_test.php
+            tests/autoschedule_v5_test.php
+            tests/version_v6_test.php
+            tests/audit_v7_test.php
+            tests/shift_rest_v8_test.php
+            tests/repair_v9_test.php
+            tests/repair_v9_legacy_test.php
+            tests/fairness_skill_v10_test.php
+            tests/security_v11_test.php
+            tests/import_test.php
+            tests/import_static_test.php
+            tests/import_render_test.php
+            tests/management_static_test.php
+            tests/management_render_test.php
+          )
+          for test in "${tests[@]}"; do
+            echo "::group::$test"
+            php "$test"
+            echo '::endgroup::'
+          done
+          echo "Passed ${#tests[@]} regression scripts."
+      # tests/static_test.php is an outdated installer-file manifest
+      # and references local-only setup files deliberately omitted from this public repo.
+
+  secret-scan:
+    name: Secret scanning (Git history)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
