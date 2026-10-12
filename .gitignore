@@ -1,0 +1,59 @@
+# Sisaket Roster — protect local credentials and runtime data
+# Never commit production secrets or personally identifiable information.
+
+# Local application and database configuration
+/config.php
+/**/config.php
+/config.local.php
+/config.*.local.php
+.env
+.env.*
+!.env.example
+!.env.sample
+*.local.php
+
+# Secrets and keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.jks
+*.keystore
+secrets/
+private/
+
+# Database backups, exports, and uploads
+*.sql.gz
+*.sql.zip
+*.dump
+*.bak
+*.backup
+*.sqlite
+*.sqlite3
+/backups/
+/backup/
+/storage/
+/uploads/
+/public/uploads/
+/tmp/
+/temp/
+
+# Runtime logs / session files
+*.log
+/logs/
+/cache/
+/sessions/
+/runtime/
+
+# Editor / environment / build
+/.idea/
+/.vscode/
+/vendor/
+/node_modules/
+.DS_Store
+Thumbs.db
+
+# Spreadsheet and data exports
+*.csv.bak
+*.xlsx.bak
