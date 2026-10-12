@@ -1,0 +1,7 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>เข้าสู่ระบบตารางเวร</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600&family=Sarabun:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="css/roster.css"></head>
+<body class="login-body"><div class="login-card shadow-sm"><div class="brand-bubble">✚</div><h1 class="h4 fw-bold">ระบบจัดการตารางปฏิบัติงาน</h1><p class="text-secondary">รพ.สต. สังกัดองค์การบริหารส่วนจังหวัดศรีสะเกษ</p>
+<?php if ($error): ?><div role="alert" class="alert alert-danger"><?=e($error)?></div><?php endif; ?>
+<form method="post" action="index.php?c=auth&a=do_login"><input type="hidden" name="csrf_token" value="<?=e(\App\Core\Csrf::token())?>"><div class="mb-3"><label class="form-label" for="email">อีเมล</label><input class="form-control form-control-lg" type="email" name="email" id="email" autocomplete="username" required></div><div class="mb-4"><label class="form-label" for="password">รหัสผ่าน</label><input class="form-control form-control-lg" type="password" name="password" id="password" autocomplete="current-password" required></div><button type="submit" class="btn btn-primary btn-lg w-100">เข้าสู่ระบบ</button></form><p class="text-secondary small text-center mt-4">เฉพาะผู้ได้รับสิทธิ์จากผู้ดูแลระบบ</p></div></body></html>
