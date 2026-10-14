@@ -54,3 +54,7 @@
 .fairness-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.75rem;margin-bottom:1rem}
 .fairness-summary{background:#fff;border:1px solid #dce6ef;border-radius:12px;padding:.75rem;display:flex;gap:.25rem;flex-direction:column}
 .fairness-summary small,.fairness-summary span{color:#466077}.fairness-summary strong{font-size:1.2rem}
+
+/* Dialogs inside fullscreen root; Bootstrap backdrop is otherwise outside fullscreen */
+.workspace:fullscreen .modal{background:rgba(18,43,66,.54);z-index:2050}
+.workspace:fullscreen .toast-region,.workspace:fullscreen .context-menu{z-index:2060}
