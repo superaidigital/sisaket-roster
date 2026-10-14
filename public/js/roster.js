@@ -387,25 +387,52 @@
     for(let y=new Date().getFullYear()-5;y<=new Date().getFullYear()+6;y++)addYear(y);
     $('monthSelect').value=state.month;$('yearSelect').value=state.year;
   }
+  function setStaffExpanded(expanded) {
+    ['openStaff','focusStaff'].forEach(id=>$(id)?.setAttribute('aria-expanded',String(expanded)));
+  }
   function openStaff() {
     const workspace=$('rosterWorkspace'), panel=$('staffPanel'), backdrop=$('drawerBackdrop');
     if (!workspace || !panel || !backdrop) return;
     updateResponsive();
     if (!workspace.classList.contains('compact-panel')) {
-      // Wide screens already show the staff panel; do not obscure it with the drawer backdrop.
-      closeStaff();
+      // The desktop close button hides the inline panel; reopen it without an overlay.
+      workspace.classList.remove('staff-hidden','staff-open');
+      backdrop.hidden=true;
+      setStaffExpanded(true);
       panel.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});
       $('staffSearch')?.focus({preventScroll:true});
       return;
     }
-    // Only compact layouts use the off-canvas drawer and its backdrop.
+    // Only compact screens show a drawer and backdrop.
     const opening=!workspace.classList.contains('staff-open');
     workspace.classList.toggle('staff-open',opening);
     backdrop.hidden=!opening;
+    setStaffExpanded(opening);
     if (opening) $('staffSearch')?.focus({preventScroll:true});
+    else (document.fullscreenElement ? $('focusStaff') : $('openStaff'))?.focus({preventScroll:true});
   }
-  function closeStaff() { $('rosterWorkspace').classList.remove('staff-open'); $('drawerBackdrop').hidden=true; }
-  function updateResponsive() {const compact=$('rosterWorkspace').clientWidth<1180;$('rosterWorkspace').classList.toggle('compact-panel',compact);if(!compact)closeStaff();}
+  function closeStaff() {
+    const workspace=$('rosterWorkspace');
+    if (!workspace) return;
+    // On desktop, closing must hide the inline panel, not only clear drawer state.
+    if (!workspace.classList.contains('compact-panel')) workspace.classList.add('staff-hidden');
+    workspace.classList.remove('staff-open');
+    $('drawerBackdrop').hidden=true;
+    setStaffExpanded(false);
+    (document.fullscreenElement ? $('focusStaff') : $('openStaff'))?.focus({preventScroll:true});
+  }
+  function updateResponsive() {
+    const workspace=$('rosterWorkspace');
+    if (!workspace) return;
+    const wasCompact=workspace.classList.contains('compact-panel');
+    const compact=workspace.clientWidth<1180;
+    workspace.classList.toggle('compact-panel',compact);
+    if (wasCompact!==compact) {
+      workspace.classList.remove('staff-open');
+      $('drawerBackdrop').hidden=true;
+    }
+    setStaffExpanded(compact ? workspace.classList.contains('staff-open') : !workspace.classList.contains('staff-hidden'));
+  }
   function toggleFullscreen() {
     const elem=$('rosterWorkspace');
     if(document.fullscreenElement) document.exitFullscreen().catch(()=>toast('ไม่สามารถออกจากเต็มจอ','danger'));
