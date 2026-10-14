@@ -387,7 +387,23 @@
     for(let y=new Date().getFullYear()-5;y<=new Date().getFullYear()+6;y++)addYear(y);
     $('monthSelect').value=state.month;$('yearSelect').value=state.year;
   }
-  function openStaff() { $('rosterWorkspace').classList.toggle('staff-open'); $('drawerBackdrop').hidden=!$('rosterWorkspace').classList.contains('staff-open'); }
+  function openStaff() {
+    const workspace=$('rosterWorkspace'), panel=$('staffPanel'), backdrop=$('drawerBackdrop');
+    if (!workspace || !panel || !backdrop) return;
+    updateResponsive();
+    if (!workspace.classList.contains('compact-panel')) {
+      // Wide screens already show the staff panel; do not obscure it with the drawer backdrop.
+      closeStaff();
+      panel.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});
+      $('staffSearch')?.focus({preventScroll:true});
+      return;
+    }
+    // Only compact layouts use the off-canvas drawer and its backdrop.
+    const opening=!workspace.classList.contains('staff-open');
+    workspace.classList.toggle('staff-open',opening);
+    backdrop.hidden=!opening;
+    if (opening) $('staffSearch')?.focus({preventScroll:true});
+  }
   function closeStaff() { $('rosterWorkspace').classList.remove('staff-open'); $('drawerBackdrop').hidden=true; }
   function updateResponsive() {const compact=$('rosterWorkspace').clientWidth<1180;$('rosterWorkspace').classList.toggle('compact-panel',compact);if(!compact)closeStaff();}
   function toggleFullscreen() {
