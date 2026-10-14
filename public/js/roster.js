@@ -234,7 +234,27 @@
       toast(`บันทึก ${result.saved} ช่องแล้ว`,'success'); await load();
     });
   }
-  function showInfo(title,html) { $('infoTitle').textContent=title; $('infoBody').innerHTML=html; modal('infoModal').show(); }
+  function showInfo(title,html) {
+    syncFullscreenLayers();
+    $('infoTitle').textContent=title;
+    $('infoBody').innerHTML=html;
+    modal('infoModal').show();
+  }
+  async function checkSaveStatus() {
+    if (!roster()) {toast('ยังไม่มีตารางเวร','danger');return;}
+    const revision=Number(roster().lock_version);
+    const rosterId=Number(roster().id);
+    try {
+      await state.queue;
+      const response=await get('data',{hospital_id:state.hospitalId,year:state.year,month:state.month});
+      const saved=response.roster;
+      const matched=Number(saved?.id)===rosterId && Number(saved?.lock_version)===Number(roster()?.lock_version);
+      const description=matched?'Revision บนเซิร์ฟเวอร์ตรงกับตารางที่แสดง':'Revision ไม่ตรง กรุณาโหลดข้อมูลล่าสุดเพื่อตรวจสอบ';
+      showInfo('สถานะการบันทึก',`<div class="alert alert-${matched?'success':'warning'}">${safe(description)}</div>
+        <p>Version ${safe(saved?.version??'—')} · Revision บนเซิร์ฟเวอร์ ${safe(saved?.lock_version??'—')} · Revision ก่อนตรวจ ${safe(revision)}</p>
+        <p class="small text-secondary mb-0">การแก้ไขช่องเวรถูกบันทึกผ่าน AJAX อยู่แล้ว ปุ่มนี้ตรวจสอบข้อมูลบนเซิร์ฟเวอร์ ไม่ได้บันทึกเวรซ้ำ</p>`);
+    } catch(error) {handleError(error);}
+  }
   function showValidation(result) {
     if(!result) return;
     const items=result.items||[];
@@ -433,6 +453,14 @@
     }
     setStaffExpanded(compact ? workspace.classList.contains('staff-open') : !workspace.classList.contains('staff-hidden'));
   }
+  function syncFullscreenLayers() {
+    const workspace=$('rosterWorkspace');
+    const target=document.fullscreenElement===workspace ? workspace : document.body;
+    ['infoModal','shiftModal','toastRegion','contextMenu'].forEach(id=>{
+      const node=$(id);
+      if(node && node.parentElement!==target) target.appendChild(node);
+    });
+  }
   function toggleFullscreen() {
     const elem=$('rosterWorkspace');
     if(document.fullscreenElement) document.exitFullscreen().catch(()=>toast('ไม่สามารถออกจากเต็มจอ','danger'));
@@ -519,7 +547,7 @@
     $('nextMonth').addEventListener('click',()=>changeMonth(1));
     $('todayBtn').addEventListener('click',()=>{const now=new Date();state.year=now.getFullYear();state.month=now.getMonth()+1;state.day=now.getDate();load();});
     $('createBtn').addEventListener('click',()=>enqueue(async()=>{const r=await post('create',{hospital_id:state.hospitalId,year:state.year,month:state.month});toast(`สร้าง Draft Version ${r.roster.version} แล้ว`,'success');await load();}));
-    $('saveBtn').addEventListener('click',()=>toast('ทุกช่องที่แก้ไขบันทึก Draft ผ่าน AJAX แล้ว','success'));
+    $('saveBtn').addEventListener('click',checkSaveStatus);
     $('copyBtn').addEventListener('click',previewCopy);$('autoBtn').addEventListener('click',previewAuto);$('repairBtn').addEventListener('click',previewRepair);$('balanceBtn').addEventListener('click',previewBalance);$('validateBtn').addEventListener('click',validateRoster);
     ['submit','approve','reject','publish','lock'].forEach(a=>$(a+'Btn').addEventListener('click',()=>transition(a)));
     $('revisionBtn').addEventListener('click',()=>{const reason=prompt('กรุณาระบุเหตุผลในการสร้าง Version ใหม่');if(!reason||reason.trim().length<3)return;enqueue(async()=>{const result=await post('new_revision',{roster_id:roster().id,expected_revision:roster().lock_version,reason});toast('สร้าง Version '+result.roster.version+' สำเร็จ','success');await load();});});
@@ -531,7 +559,7 @@
     $('openStaff').addEventListener('click',openStaff);$('closeStaff').addEventListener('click',closeStaff);$('drawerBackdrop').addEventListener('click',closeStaff);
     $('fullscreenBtn').addEventListener('click',toggleFullscreen);$('exitFullscreen').addEventListener('click',toggleFullscreen);
     $('focusStaff').addEventListener('click',openStaff);$('focusValidate').addEventListener('click',validateRoster);
-    $('focusSave').addEventListener('click',()=>toast('การแก้ไขแต่ละช่องบันทึกทันทีแล้ว','success'));
+    $('focusSave').addEventListener('click',checkSaveStatus);
     $('prevDay').addEventListener('click',()=>{if(state.day>1)state.day--;else{changeMonth(-1);state.day=dayCount();}renderMobile();});
     $('nextDay').addEventListener('click',()=>{if(state.day<dayCount())state.day++;else{changeMonth(1);state.day=1;}renderMobile();});
     $('mobileToday').addEventListener('click',()=>{const n=new Date();state.year=n.getFullYear();state.month=n.getMonth()+1;state.day=n.getDate();load();});
@@ -568,7 +596,7 @@
       }
     }catch(_){toast('ข้อมูลลากวางไม่ถูกต้อง','danger');}});
     const observer=new ResizeObserver(updateResponsive);observer.observe($('rosterWorkspace'));
-    document.addEventListener('fullscreenchange',updateResponsive);
+    document.addEventListener('fullscreenchange',()=>{syncFullscreenLayers();updateResponsive();});
   }
   initSelectors();bindEvents();load();
 })();
