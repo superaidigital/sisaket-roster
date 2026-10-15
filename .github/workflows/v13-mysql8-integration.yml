@@ -40,6 +40,7 @@ jobs:
           sed -e '/^CREATE DATABASE IF NOT EXISTS sisaket_roster /d' -e '/^USE sisaket_roster;/d' database/schema.sql | mysql -h 127.0.0.1 -u root sisaket_roster_ci
           mysql -h 127.0.0.1 -u root sisaket_roster_ci < database/migrations/20261015_duty_foundation.sql
           mysql -h 127.0.0.1 -u root sisaket_roster_ci < database/migrations/20261015_v13_phase3_rate_proposals.sql
+          mysql -h 127.0.0.1 -u root sisaket_roster_ci < database/migrations/20261015_v13_duty_coverage.sql
       - name: PHP lint
         run: php -l tests/v13_mysql8_integration.php
       - name: Exercise submitted/reviewed/locked rosters, leave and swap
