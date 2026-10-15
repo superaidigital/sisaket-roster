@@ -10,7 +10,7 @@ use App\Core\Csrf;
 <header class="duty-header">
 <div><span class="duty-eyebrow">SISAKET PAO · DUTY MANAGEMENT</span><h1>ตารางเวรปฏิบัติงาน ย / บ / ร</h1>
 <p class="duty-subtitle">ระบบทดลองจัดเวรนอกเวลาราชการ — บันทึกเฉพาะ Draft ไม่ใช่คำสั่งอนุมัติหรือหลักฐานเบิกค่าตอบแทน</p></div>
-<div class="duty-header-actions"><a class="btn btn-outline-primary btn-sm" href="index.php?c=roster&a=index">← กลับตารางเวร V11</a></div>
+<div class="duty-header-actions"><a class="btn btn-outline-primary btn-sm" href="index.php?c=roster&a=index">← กลับตารางเวร V11</a><a class="btn btn-outline-success btn-sm" href="index.php?c=leave&a=index">แบบฟอร์มวันลา</a></div>
 </header>
 <section class="surface duty-selectors" aria-label="เลือกหน่วยบริการและเดือน">
 <div class="duty-form-grid">

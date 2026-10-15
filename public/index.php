@@ -24,6 +24,7 @@ try {
         'admin'=>['index','hospitals','hospital_form','hospital_save','staff','staff_form','staff_save','staff_reset_password','staff_import','staff_import_preview','staff_import_confirm','staff_import_result','skills','skills_save'],
         'duty'=>['index','data','create','save','validate','submit','review'],
         'duty_rates'=>['index','data','propose'],
+        'leave'=>['index','data','submit','decide'],
         'duty_docs'=>['preview'],
         'roster'=>['index','data','create','save_shift','bulk_save','validate','auto_preview','auto_apply','repair_preview','repair_apply','fairness_preview','fairness_apply',
             'copy_preview','copy_apply','submit','approve','reject','publish','lock','new_revision',
@@ -35,6 +36,7 @@ try {
         'admin'=>new App\Controllers\AdminController(),
         'duty'=>new App\Controllers\DutyController(),
         'duty_rates'=>new App\Controllers\DutyRateAdminController(),
+        'leave'=>new App\Controllers\LeaveController(),
         'duty_docs'=>new App\Controllers\DutyDocumentsController(),
         default=>new App\Controllers\RosterController(),
     };
