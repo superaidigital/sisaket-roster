@@ -10,11 +10,18 @@ async function load(){try{const d=await call('data');$('type').replaceChildren()
 for(const t of d.types){const op=new Option(t.name,String(t.id));$('type').add(op);}
 const tbody=$('requests');tbody.replaceChildren();
 for(const r of d.requests){const row=document.createElement('tr');for(const key of ['id','full_name','leave_type','starts_at','ends_at','status']){const td=document.createElement('td');td.textContent=r[key]??'';row.append(td);}
-const actions=document.createElement('td');if(d.can_review&&r.status==='SUBMITTED'){for(const [label,decision] of [['อนุมัติ','APPROVED'],['ไม่อนุมัติ','REJECTED']]){const b=document.createElement('button');b.type='button';b.className='btn btn-sm btn-outline-secondary me-1';b.textContent=label;b.addEventListener('click',()=>decide(r.id,decision));actions.append(b);}}row.append(actions);tbody.append(row);}
+const actions=document.createElement('td');const detail=document.createElement('button');detail.type='button';detail.className='btn btn-sm btn-outline-primary me-1';detail.textContent='เหตุผล';detail.addEventListener('click',()=>reason(r.id));actions.append(detail);if(d.can_review&&r.status==='SUBMITTED'){for(const [label,decision] of [['อนุมัติ','APPROVED'],['ไม่อนุมัติ','REJECTED']]){const b=document.createElement('button');b.type='button';b.className='btn btn-sm btn-outline-secondary me-1';b.textContent=label;b.addEventListener('click',()=>decide(r.id,decision));actions.append(b);}}row.append(actions);tbody.append(row);}
 notify('โหลดรายการเรียบร้อย');}catch(e){notify(e.message,true);}}
 $('leave-form').addEventListener('submit',async e=>{e.preventDefault();if(busy)return;busy=true;$('submit').disabled=true;
 try{const d=await call('submit',{leave_type_id:Number($('type').value),starts_at:dt($('start').value),ends_at:dt($('end').value),reason:$('reason').value});
 $('leave-form').reset();await load();notify(d.message);}catch(e){notify(e.message,true);}finally{busy=false;$('submit').disabled=false;}});
+async function reason(id){
+ try{
+ const res=await fetch('index.php?c=leave&a=detail&request_id='+encodeURIComponent(id),{credentials:'same-origin',headers:{Accept:'application/json'}});
+ const d=await res.json();if(!res.ok||!d.success)throw Error(d.message||'ไม่สามารถดูเหตุผลการลา');
+ notify('เหตุผลที่บันทึก: '+(d.detail.reason||'(ไม่ระบุ)'));
+ }catch(e){notify(e.message,true);}
+}
 async function decide(id,decision){if(busy||!confirm('ยืนยันผลการพิจารณา '+decision+' ?'))return;busy=true;
 try{const d=await call('decide',{request_id:Number(id),decision});await load();notify(d.message);}catch(e){notify(e.message,true);}finally{busy=false;}}
 load();
