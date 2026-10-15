@@ -1,0 +1,37 @@
+name: Duty V13 Validation and Submission
+on:
+  push:
+    branches:
+      - feature/duty-v13-validation-submit-20261015
+  pull_request:
+    paths:
+      - 'app/Services/DutyRosterValidationService.php'
+      - 'app/Controllers/DutyController.php'
+      - 'app/Views/duty/index.php'
+      - 'public/index.php'
+      - 'public/js/duty-roster-v13.js'
+      - 'tests/duty_validation_test.php'
+      - 'tests/duty_phase2_test.php'
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring,pdo_mysql
+      - name: Lint application and JavaScript
+        run: |
+          php -l app/Services/DutyRosterValidationService.php
+          php -l app/Controllers/DutyController.php
+          php -l app/Views/duty/index.php
+          php -l public/index.php
+          node --check public/js/duty-roster-v13.js
+      - name: Unit and source regression tests
+        run: |
+          php tests/duty_validation_test.php
+          php tests/duty_foundation_test.php
+          php tests/duty_phase2_test.php
+          php tests/duty_document_preview_test.php
+          php tests/security_v11_test.php
