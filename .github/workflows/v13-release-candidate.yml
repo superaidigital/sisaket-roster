@@ -1,0 +1,33 @@
+name: V13 Release Candidate Review
+on:
+  push:
+    branches: [feature/v13-release-candidate-workflows-20261015]
+  pull_request:
+    paths:
+      - 'app/Services/DutyReview*.php'
+      - 'app/Controllers/DutyController.php'
+      - 'app/Views/duty/index.php'
+      - 'public/index.php'
+      - 'public/js/duty-roster-v13.js'
+      - 'tests/duty_review_policy_test.php'
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring,pdo_mysql
+      - name: Syntax
+        run: |
+          for f in app/Services/DutyReviewPolicy.php app/Services/DutyReviewService.php app/Controllers/DutyController.php app/Views/duty/index.php public/index.php; do php -l "$f"; done
+          node --check public/js/duty-roster-v13.js
+      - name: Regression
+        run: |
+          php tests/duty_review_policy_test.php
+          php tests/duty_validation_test.php
+          php tests/duty_phase2_test.php
+          php tests/security_v11_test.php

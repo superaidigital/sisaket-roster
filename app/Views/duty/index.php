@@ -10,7 +10,7 @@ use App\Core\Csrf;
 <header class="duty-header">
 <div><span class="duty-eyebrow">SISAKET PAO · DUTY MANAGEMENT</span><h1>ตารางเวรปฏิบัติงาน ย / บ / ร</h1>
 <p class="duty-subtitle">ระบบทดลองจัดเวรนอกเวลาราชการ — บันทึกเฉพาะ Draft ไม่ใช่คำสั่งอนุมัติหรือหลักฐานเบิกค่าตอบแทน</p></div>
-<div class="duty-header-actions"><a class="btn btn-outline-primary btn-sm" href="index.php?c=roster&a=index">← กลับตารางเวร V11</a></div>
+<div class="duty-header-actions"><a class="btn btn-outline-primary btn-sm" href="index.php?c=roster&a=index">← กลับตารางเวร V11</a><a class="btn btn-outline-success btn-sm" href="index.php?c=leave&a=index">แบบฟอร์มวันลา</a><a class="btn btn-outline-primary btn-sm" href="index.php?c=swap&a=index">คำขอเปลี่ยนเวร</a><?php if(in_array($user['role'],['SUPERADMIN','ADMIN'],true)):?><a class="btn btn-outline-secondary btn-sm" href="index.php?c=duty_coverage&a=index">เกณฑ์ทักษะ Duty</a><?php endif;?></div>
 </header>
 <section class="surface duty-selectors" aria-label="เลือกหน่วยบริการและเดือน">
 <div class="duty-form-grid">
@@ -37,7 +37,7 @@ use App\Core\Csrf;
 <div class="duty-alert" id="msg" data-kind="loading" role="status" aria-live="polite">กำลังโหลดข้อมูล...</div>
 <section class="surface" aria-labelledby="heading">
 <div class="duty-toolbar"><div class="duty-toolbar-title"><h2 id="heading">ตารางเวร</h2><span class="duty-badge" id="status-badge">ยังไม่มี Draft</span><small id="meta"></small></div>
-<div class="duty-toolbar-actions"><button class="btn btn-sm btn-outline-secondary" id="table-mode" type="button" aria-pressed="true">▦ ตาราง</button><button class="btn btn-sm btn-outline-secondary" id="calendar-mode" type="button" aria-pressed="false">▣ รายบุคคล</button><button class="btn btn-sm btn-outline-secondary" id="fullscreen" type="button">⛶ เต็มจอ</button><button class="btn btn-sm btn-outline-primary" id="validate" type="button" hidden>ตรวจสอบตาราง</button><button class="btn btn-sm btn-success" id="submit" type="button" hidden>ส่งตรวจ</button><button class="btn btn-sm btn-primary" id="create" type="button" hidden>+ สร้าง Draft</button></div></div>
+<div class="duty-toolbar-actions"><button class="btn btn-sm btn-outline-secondary" id="table-mode" type="button" aria-pressed="true">▦ ตาราง</button><button class="btn btn-sm btn-outline-secondary" id="calendar-mode" type="button" aria-pressed="false">▣ รายบุคคล</button><button class="btn btn-sm btn-outline-secondary" id="fullscreen" type="button">⛶ เต็มจอ</button><button class="btn btn-sm btn-outline-secondary" id="review-approve" type="button" hidden>เห็นชอบ</button><button class="btn btn-sm btn-outline-danger" id="review-reject" type="button" hidden>ส่งแก้ไข</button><button class="btn btn-sm btn-outline-success" id="review-publish" type="button" hidden>เผยแพร่</button><button class="btn btn-sm btn-outline-secondary" id="review-lock" type="button" hidden>ล็อกตาราง</button><button class="btn btn-sm btn-outline-primary" id="validate" type="button" hidden>ตรวจสอบตาราง</button><button class="btn btn-sm btn-success" id="submit" type="button" hidden>ส่งตรวจ</button><button class="btn btn-sm btn-primary" id="create" type="button" hidden>+ สร้าง Draft</button></div></div>
 <div class="duty-filterbar">
 <div class="duty-filter"><label for="search">ค้นหาบุคลากร</label><input id="search" class="form-control" type="search" placeholder="ชื่อ / ตำแหน่ง"></div>
 <div class="duty-filter small"><label for="shift-filter">กรองเวร</label><select id="shift-filter" class="form-select"><option value="">เวรทั้งหมด</option><option value="ย">เวร ย</option><option value="บ">เวร บ</option><option value="ร">เวร ร</option></select></div>
@@ -51,5 +51,5 @@ use App\Core\Csrf;
 <footer class="duty-footer"><span id="footer-count">—</span><span>การบันทึกแต่ละครั้งตรวจสิทธิ์ เวรซ้อน วันลา วันหยุด และ Revision ที่ฝั่งเซิร์ฟเวอร์</span></footer>
 </section><p class="duty-note">เวร ย ใช้เฉพาะวันหยุดที่เข้าหลักเกณฑ์ • ยอดนับจากรายการเวรที่บันทึกแล้ว ไม่รวมเงินค่าตอบแทน • ร่างนี้ไม่ได้แก้ไขตาราง V11</p>
 </div></main>
-<script>window.DUTY_CSRF=<?=json_encode(Csrf::token(),JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;</script>
+<script>window.DUTY_USER_ROLE=<?=json_encode((string)$user['role'],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;window.DUTY_CSRF=<?=json_encode(Csrf::token(),JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;</script>
 <script src="js/duty-roster-v13.js" defer></script></body></html>

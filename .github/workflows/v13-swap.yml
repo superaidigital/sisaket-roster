@@ -1,0 +1,33 @@
+name: V13 Duty Swap Consent
+on:
+  push:
+    branches: [feature/v13-release-candidate-workflows-20261015]
+  pull_request:
+    paths:
+      - 'app/Services/DutySwapService.php'
+      - 'app/Controllers/SwapController.php'
+      - 'app/Views/swap/index.php'
+      - 'public/js/swap-v13.js'
+      - 'tests/swap_v13_test.php'
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring,pdo_mysql,openssl
+      - name: PHP lint and JS parse
+        run: |
+          for f in app/Services/DutySwapService.php app/Controllers/SwapController.php app/Views/swap/index.php tests/swap_v13_test.php; do php -l "$f"; done
+          node --check public/js/swap-v13.js
+      - name: Regression
+        run: |
+          php tests/swap_v13_test.php
+          php tests/leave_v13_test.php
+          php tests/duty_validation_test.php
+          php tests/duty_review_policy_test.php
+          php tests/security_v11_test.php

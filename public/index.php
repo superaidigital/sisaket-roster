@@ -22,8 +22,11 @@ try {
     $routes=[
         'auth'=>['login','do_login','change_password','do_change_password','logout'],
         'admin'=>['index','hospitals','hospital_form','hospital_save','staff','staff_form','staff_save','staff_reset_password','staff_import','staff_import_preview','staff_import_confirm','staff_import_result','skills','skills_save'],
-        'duty'=>['index','data','create','save','validate','submit'],
+        'duty'=>['index','data','create','save','validate','submit','review'],
         'duty_rates'=>['index','data','propose'],
+        'leave'=>['index','data','detail','submit','decide'],
+        'swap'=>['index','data','request','consent','review','reason'],
+        'duty_coverage'=>['index','data','save'],
         'duty_docs'=>['preview'],
         'roster'=>['index','data','create','save_shift','bulk_save','validate','auto_preview','auto_apply','repair_preview','repair_apply','fairness_preview','fairness_apply',
             'copy_preview','copy_apply','submit','approve','reject','publish','lock','new_revision',
@@ -35,6 +38,9 @@ try {
         'admin'=>new App\Controllers\AdminController(),
         'duty'=>new App\Controllers\DutyController(),
         'duty_rates'=>new App\Controllers\DutyRateAdminController(),
+        'leave'=>new App\Controllers\LeaveController(),
+        'swap'=>new App\Controllers\SwapController(),
+        'duty_coverage'=>new App\Controllers\DutyCoverageController(),
         'duty_docs'=>new App\Controllers\DutyDocumentsController(),
         default=>new App\Controllers\RosterController(),
     };
