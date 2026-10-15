@@ -1,0 +1,51 @@
+name: V13 MySQL8 End-to-End Service Integration
+on:
+  push:
+    branches: [feature/v13-release-candidate-workflows-20261015]
+  pull_request:
+    paths:
+      - 'app/Services/DutyReview*.php'
+      - 'app/Services/Leave*.php'
+      - 'app/Services/DutySwapService.php'
+      - 'tests/v13_mysql8_integration.php'
+      - '.github/workflows/v13-mysql8-integration.yml'
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: local_ci_only
+          MYSQL_DATABASE: sisaket_roster_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -plocal_ci_only"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring,pdo_mysql,openssl
+      - name: Install V11 and V13 schema in isolated database only
+        env:
+          MYSQL_PWD: local_ci_only
+        run: |
+          sed -e '/^CREATE DATABASE IF NOT EXISTS sisaket_roster /d' -e '/^USE sisaket_roster;/d' database/schema.sql | mysql -h 127.0.0.1 -u root sisaket_roster_ci
+          mysql -h 127.0.0.1 -u root sisaket_roster_ci < database/migrations/20261015_duty_foundation.sql
+          mysql -h 127.0.0.1 -u root sisaket_roster_ci < database/migrations/20261015_v13_phase3_rate_proposals.sql
+      - name: PHP lint
+        run: php -l tests/v13_mysql8_integration.php
+      - name: Exercise submitted/reviewed/locked rosters, leave and swap
+        env:
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_NAME: sisaket_roster_ci
+          TEST_DB_USER: root
+          TEST_DB_PASSWORD: local_ci_only
+        run: php tests/v13_mysql8_integration.php
