@@ -1,0 +1,35 @@
+name: V13 Phase3 Rate Proposal Validation
+on:
+  push:
+    branches:
+      - feature/v13-phase3-rate-proposals-20261015
+  pull_request:
+    paths:
+      - 'app/Controllers/DutyRateAdminController.php'
+      - 'app/Services/DutyRateProposal*.php'
+      - 'app/Views/admin/duty_rates.php'
+      - 'database/migrations/*v13_phase3*'
+      - 'tests/duty_rate_proposal_test.php'
+jobs:
+  pure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring,pdo_mysql
+      - name: Lint new controllers, services and admin template
+        run: |
+          php -l app/Services/DutyRateProposalPolicy.php
+          php -l app/Services/DutyRateProposalService.php
+          php -l app/Controllers/DutyRateAdminController.php
+          php -l app/Views/admin/duty_rates.php
+          php -l public/index.php
+      - name: V13 proposal policy
+        run: php tests/duty_rate_proposal_test.php
+      - name: Phase2 and V11 regressions
+        run: |
+          php tests/duty_foundation_test.php
+          php tests/duty_phase2_test.php
+          php tests/security_v11_test.php
