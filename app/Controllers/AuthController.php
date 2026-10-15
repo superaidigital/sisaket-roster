@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace App\Controllers;
 use App\Core\{Auth,Csrf,Database};
+use App\Services\LoginThrottle;
 
 final class AuthController {
     public function login(): void {
@@ -15,20 +16,23 @@ final class AuthController {
     }
     public function do_login(): void {
         requirePost(); Csrf::check();
-        $attempts=(int)($_SESSION['login_attempts'] ?? 0);
-        $since=(int)($_SESSION['login_first_attempt'] ?? time());
-        if (time()-$since>=600) { $_SESSION['login_attempts']=0; $_SESSION['login_first_attempt']=time(); $attempts=0; $since=time(); }
-        if ($attempts>=5) { $_SESSION['login_error']='พยายามเข้าสู่ระบบมากเกินไป กรุณาลองอีกครั้งใน 10 นาที'; header('Location: index.php?c=auth&a=login'); exit; }
         $email=mb_strtolower(trim((string)($_POST['email'] ?? '')));
         $password=(string)($_POST['password'] ?? '');
+        // A shared, locked server-side throttle persists across new PHP sessions.
+        $retry=LoginThrottle::retryAfter($email);
+        if ($retry>0) {
+            $_SESSION['login_error']='พยายามเข้าสู่ระบบมากเกินไป กรุณารอ '.(int)ceil($retry/60).' นาทีแล้วลองใหม่';
+            header('Location: index.php?c=auth&a=login',true,303); exit;
+        }
         $q=Database::pdo()->prepare('SELECT id,password_hash,is_active,must_change_password FROM users WHERE email=? LIMIT 1');
         $q->execute([$email]); $u=$q->fetch();
         if (!$u || !(int)$u['is_active'] || !password_verify($password,(string)$u['password_hash'])) {
-            $_SESSION['login_attempts']=$attempts+1; $_SESSION['login_first_attempt']=$since;
+            LoginThrottle::recordFailure($email);
             $_SESSION['login_error']='อีเมลหรือรหัสผ่านไม่ถูกต้อง'; header('Location: index.php?c=auth&a=login'); exit;
         }
+        LoginThrottle::clearAccount($email);
         session_regenerate_id(true);
-        $_SESSION['user_id']=(int)$u['id']; $_SESSION['login_attempts']=0;
+        $_SESSION['user_id']=(int)$u['id'];
         $_SESSION['csrf']=bin2hex(random_bytes(32));
         header('Location: index.php?c='.((int)$u['must_change_password']===1?'auth&a=change_password':'roster&a=index')); exit;
     }
