@@ -64,6 +64,11 @@ $insertRoster->execute([$hospital,$year,$month,2,'DRAFT',$scheduler['id']]);
 $roster2=(int)$db->lastInsertId();
 $type=(int)$db->query("SELECT id FROM duty_types WHERE code='บ' LIMIT 1")->fetchColumn();
 chk($type>0,'duty types seeded');
+$db->prepare("INSERT INTO duty_coverage_requirements
+ (hospital_id,duty_type_id,skill_code,min_count,evidence_reference,verified_by)
+ VALUES (?,?,?,?,?,?)")
+ ->execute([$hospital,$type,'__TOTAL__',1,'CI TEST CRITERIA - NOT A LEGAL POLICY',$director['id']]);
+
 $insertAssignment=$db->prepare("INSERT INTO duty_assignments(duty_roster_id,user_id,duty_type_id,work_date,start_at,end_at,created_by,updated_by)
     VALUES(?,?,?,?,?,?,?,?)");
 [$start,$end]=DutyPolicy::interval($day,'บ');
