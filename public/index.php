@@ -22,7 +22,7 @@ try {
     $routes=[
         'auth'=>['login','do_login','change_password','do_change_password','logout'],
         'admin'=>['index','hospitals','hospital_form','hospital_save','staff','staff_form','staff_save','staff_reset_password','staff_import','staff_import_preview','staff_import_confirm','staff_import_result','skills','skills_save'],
-        'duty'=>['index','data','create','save','validate','submit'],
+        'duty'=>['index','data','create','save','validate','submit','review'],
         'duty_rates'=>['index','data','propose'],
         'duty_docs'=>['preview'],
         'roster'=>['index','data','create','save_shift','bulk_save','validate','auto_preview','auto_apply','repair_preview','repair_apply','fairness_preview','fairness_apply',

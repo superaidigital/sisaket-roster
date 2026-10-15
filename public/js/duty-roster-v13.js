@@ -45,6 +45,11 @@ let html='';const first=weekday(1);for(let i=0;i<first;i++)html+='<div class="du
 for(let d=1;d<=limit;d++){const w=weekday(d);html+='<div class="duty-day" data-weekend="'+(w===0||w===6)+'"><div class="date">'+d+'<span class="dow">'+dow[w]+'</span></div><div class="duty-toggles">'+['ย','บ','ร'].map(c=>toggle(chosen.id,chosen.full_name,d,c,mark)).join('')+'</div></div>';}
 $('calendar-grid').innerHTML=html;}
 function render(){const s=state.snapshot;if(!s)return;const r=s.roster;
+const role=window.DUTY_USER_ROLE||'';
+$('review-approve').hidden=!(r?.status==='SUBMITTED'&&['DIRECTOR','SUPERADMIN'].includes(role));
+$('review-reject').hidden=!(r?.status==='SUBMITTED'&&['DIRECTOR','SUPERADMIN'].includes(role));
+$('review-publish').hidden=!(r?.status==='APPROVED'&&['SUPERADMIN','ADMIN','SCHEDULER'].includes(role));
+$('review-lock').hidden=!(r?.status==='PUBLISHED'&&['SUPERADMIN','ADMIN'].includes(role));
 $('validate').hidden=!(r&&s.can_edit);$('submit').hidden=!(r&&r.status==='DRAFT'&&s.can_edit);
 $('heading').textContent=r?'ตารางเวร Version '+r.version:'ยังไม่มีตารางเวรในเดือนที่เลือก';
 $('status-badge').textContent=r?r.status:'ยังไม่มี Draft';$('status-badge').dataset.status=r?.status||'NONE';
@@ -83,5 +88,18 @@ const body=document.createElement('tbody');for(const item of v.issues){const row
 return v;}
 $('validate').addEventListener('click',async()=>{if(state.busy||!state.period)return;lock(true);try{const result=await api('validate',state.period);const v=showValidation(result);notify(v.critical?'พบข้อผิดพลาด Critical '+v.critical+' รายการ':'ผ่านการตรวจทางเทคนิค ยังต้องตรวจความพร้อมของผู้ปฏิบัติงาน','info');}catch(e){notify(e.message,'error');}finally{lock(false);}});
 $('submit').addEventListener('click',async()=>{if(state.busy||!editable()||!state.period)return;try{const result=await api('validate',state.period);const v=showValidation(result);if(v.critical>0){notify('ต้องแก้ Critical '+v.critical+' รายการก่อนส่งตรวจ','error');return;}if(!confirm('ยืนยันส่ง Draft เข้ารอตรวจสอบ? เมื่อส่งแล้วจะไม่สามารถแก้ไข Draft นี้ได้ และยังไม่ใช่การอนุมัติคำสั่ง'))return;await mutate('submit',{expected_revision:Number(state.snapshot.roster.revision)});}catch(e){notify(e.message,'error');}});
+
+async function review(action){
+ if(state.busy||!state.snapshot?.roster||!same(selected(),state.period))return;
+ const r=state.snapshot.roster;let attested=false;
+ if(action==='approve'){
+    attested=confirm('ยืนยันว่าได้ตรวจทักษะวิชาชีพ อัตรากำลัง และคำสั่งมอบอำนาจที่มีผลจริงแล้ว? การกดยืนยันไม่ใช่ลายมือชื่อหรือคำสั่งราชการ');
+    if(!attested)return;
+ }else if(!confirm('ยืนยันดำเนินการ '+action+' สำหรับ Version '+r.version+' Revision '+r.revision+' ?'))return;
+ await mutate('review',{review_action:action,expected_revision:Number(r.revision),clinical_review_attested:attested});
+}
+for(const [id,action] of [['review-approve','approve'],['review-reject','reject'],['review-publish','publish'],['review-lock','lock']]){
+ $(id).addEventListener('click',()=>review(action));
+}
 load();
 })();

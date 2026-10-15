@@ -51,6 +51,22 @@ final class DutyController {
         catch(RuntimeException $e){jsonError($e->getMessage(),409);}
         jsonOut(['success'=>true,'validation'=>$report,'message'=>'ส่งตารางเวรเข้ารอตรวจสอบแล้ว ยังไม่ใช่คำสั่งอนุมัติ']);
     }
+    public function review(): void {
+        requirePost();Csrf::check();$input=jsonBody();
+        [$u,$hospital,$year,$month]=$this->context($input);
+        $r=D::current($hospital,$year,$month);
+        if(!$r)jsonError('ไม่พบตารางเวร',404);
+        $revision=intInput($input['expected_revision']??null,0,2147483647,'Revision');
+        $action=$input['review_action']??null;
+        if(!is_string($action) || !in_array($action,['approve','reject','publish','lock'],true))
+            jsonError('คำสั่งไม่ถูกต้อง',422);
+        if($action==='approve' && ($input['clinical_review_attested']??false)!==true)
+            jsonError('ผู้ตรวจต้องยืนยันว่าได้ตรวจทักษะวิชาชีพและความเพียงพอของอัตรากำลังแล้ว',422);
+        try{
+            $result=\App\Services\DutyReviewService::transition($u,$hospital,(int)$r['id'],$revision,$action);
+        }catch(RuntimeException $e){jsonError($e->getMessage(),409);}
+        jsonOut(['success'=>true,'roster'=>$result,'message'=>'เปลี่ยนสถานะในระบบแล้ว โปรดตรวจเอกสารและอำนาจอนุมัติจริงก่อนออกคำสั่ง']);
+    }
     public function create(): void {
         requirePost();Csrf::check();$input=jsonBody();
         [$u,$h,$year,$month]=$this->context($input);$this->editor($u);
