@@ -56,6 +56,9 @@ try {
     if(isset($present['users'])){
         $pdo->query('SELECT id,hospital_id,full_name,email,role,is_active FROM users LIMIT 0');
         checkpoint('V11 user columns readable',true);
+        // Match AuthController::do_login SELECT without exposing any account details.
+        $pdo->query('SELECT id,password_hash,is_active,must_change_password FROM users LIMIT 0')->closeCursor();
+        checkpoint('Login SELECT columns readable',true,'Required by auth&a=do_login');
         $users=(int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
         checkpoint('User accounts exist',$users>0,'count '.$users);
     }
