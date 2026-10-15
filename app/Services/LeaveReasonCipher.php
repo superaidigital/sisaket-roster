@@ -18,16 +18,26 @@ final class LeaveReasonCipher
     {
         if($reason==='')return null;
         if(strlen($reason)>1500)throw new InvalidArgumentException('เหตุผลยาวเกิน 1500 ไบต์');
+        return self::encryptWithKey($reason,self::key());
+    }
+    public static function encryptWithKey(string $reason,string $key): string
+    {
+        if(strlen($key)!==32)throw new InvalidArgumentException('Encryption key length invalid');
         $nonce=random_bytes(12);$tag='';
-        $cipher=openssl_encrypt($reason,'aes-256-gcm',self::key(),OPENSSL_RAW_DATA,$nonce,$tag,'leave-v1',16);
+        $cipher=openssl_encrypt($reason,'aes-256-gcm',$key,OPENSSL_RAW_DATA,$nonce,$tag,'leave-v1',16);
         if($cipher===false)throw new InvalidArgumentException('เข้ารหัสเหตุผลไม่สำเร็จ');
         return 'LV1'.$nonce.$tag.$cipher;
     }
     public static function decrypt(?string $stored): string
     {
         if($stored===null || $stored==='')return '';
+        return self::decryptWithKey($stored,self::key());
+    }
+    public static function decryptWithKey(string $stored,string $key): string
+    {
+        if(strlen($key)!==32)throw new InvalidArgumentException('Encryption key length invalid');
         if(strlen($stored)<31 || substr($stored,0,3)!=='LV1')throw new InvalidArgumentException('รูปแบบเหตุผลเข้ารหัสไม่รองรับ');
-        $clear=openssl_decrypt(substr($stored,31),'aes-256-gcm',self::key(),OPENSSL_RAW_DATA,substr($stored,3,12),substr($stored,15,16),'leave-v1');
+        $clear=openssl_decrypt(substr($stored,31),'aes-256-gcm',$key,OPENSSL_RAW_DATA,substr($stored,3,12),substr($stored,15,16),'leave-v1');
         if($clear===false)throw new InvalidArgumentException('ไม่สามารถถอดรหัสเหตุผลได้');
         return $clear;
     }
