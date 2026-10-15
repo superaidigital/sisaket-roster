@@ -22,6 +22,7 @@ try {
     $routes=[
         'auth'=>['login','do_login','change_password','do_change_password','logout'],
         'admin'=>['index','hospitals','hospital_form','hospital_save','staff','staff_form','staff_save','staff_reset_password','staff_import','staff_import_preview','staff_import_confirm','staff_import_result','skills','skills_save'],
+        'duty'=>['index','data','create','save'],
         'roster'=>['index','data','create','save_shift','bulk_save','validate','auto_preview','auto_apply','repair_preview','repair_apply','fairness_preview','fairness_apply',
             'copy_preview','copy_apply','submit','approve','reject','publish','lock','new_revision',
             'export_excel','export_print','audit','settings_save','version_history','version_compare','version_audit','my_schedule'],
@@ -30,6 +31,7 @@ try {
     $controller=match($c) {
         'auth'=>new App\Controllers\AuthController(),
         'admin'=>new App\Controllers\AdminController(),
+        'duty'=>new App\Controllers\DutyController(),
         default=>new App\Controllers\RosterController(),
     };
     $controller->{$a}();

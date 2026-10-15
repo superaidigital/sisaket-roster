@@ -7,7 +7,7 @@ return [
     'app' => [
         'name' => 'ตารางปฏิบัติงาน รพ.สต. อบจ.ศรีสะเกษ',
         'timezone' => 'Asia/Bangkok',
-        'session_name' => 'SSK_ROSTER_SID',
+        'session_name' => 'SSK_DUTY_PHASE2_SID',
         'cookie_secure' => false, // true when accessed with HTTPS
         'ip_hash_secret' => 'REPLACE_WITH_A_LONG_RANDOM_SECRET',
     ],
