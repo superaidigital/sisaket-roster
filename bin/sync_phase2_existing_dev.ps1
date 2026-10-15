@@ -36,7 +36,7 @@ if (!$Apply) {
     Write-Host 'PREVIEW ONLY: no fetch, checkout, pull or file change. Use -Apply only after checking status.'
     exit 0
 }
-& git -C $root fetch origin ("+refs/heads/$branch"+":refs/remotes/origin/$branch")
+& git -C $root fetch origin $branch
 # The refspec above is intentionally assembled in the call and must not force-switch local files.
 if ($LASTEXITCODE -ne 0) { throw 'Fetch failed; local working tree not changed.' }
 & git -C $root show-ref --verify --quiet "refs/heads/$branch"
