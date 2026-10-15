@@ -1,0 +1,34 @@
+name: V13 Phase4 Document Previews
+on:
+  push:
+    branches:
+      - feature/v13-phase4-document-previews-20261015
+  pull_request:
+    paths:
+      - 'app/Controllers/DutyDocumentsController.php'
+      - 'app/Services/DutyDocumentPreviewService.php'
+      - 'app/Views/duty/document_preview.php'
+      - 'tests/duty_document_preview_test.php'
+      - '.github/workflows/v13-phase4-document-previews.yml'
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring,pdo_mysql
+      - name: PHP lint
+        run: |
+          php -l app/Controllers/DutyDocumentsController.php
+          php -l app/Services/DutyDocumentPreviewService.php
+          php -l app/Views/duty/document_preview.php
+          php -l public/index.php
+      - name: Preview validation
+        run: php tests/duty_document_preview_test.php
+      - name: V11 and Phase2 regressions
+        run: |
+          php tests/duty_foundation_test.php
+          php tests/duty_phase2_test.php
+          php tests/security_v11_test.php
