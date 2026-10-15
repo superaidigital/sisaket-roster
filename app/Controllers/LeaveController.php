@@ -19,6 +19,15 @@ final class LeaveController
         jsonOut(['success'=>true,'types'=>Leave::types(),'requests'=>Leave::listing($user),
             'can_review'=>in_array((string)$user['role'],['DIRECTOR','SUPERADMIN'],true)]);
     }
+    public function detail():void
+    {
+        $u=Auth::requireUser();
+        $id=intInput($_GET['request_id']??null,1,2147483647,'เลขใบลา');
+        try{$data=Leave::detail($u,$id);}
+        catch(InvalidArgumentException $e){jsonError($e->getMessage(),422);}
+        catch(RuntimeException $e){jsonError($e->getMessage(),403);}
+        jsonOut(['success'=>true,'detail'=>$data]);
+    }
     public function submit():void
     {
         requirePost();Csrf::check();$u=Auth::requireUser();$d=jsonBody();
