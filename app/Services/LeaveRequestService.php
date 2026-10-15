@@ -38,6 +38,27 @@ final class LeaveRequestService
         $q=$db->prepare('INSERT INTO duty_audit_events (hospital_id,actor_id,action_code,record_type,record_id,change_summary) VALUES (?,?,?,?,?,?)');
         $q->execute([$h,$actor,$action,'leave_request',$id,json_encode($summary,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE)]);
     }
+    public static function detail(array $actor,int $requestId):array
+    {
+        $db=Database::pdo();$hospital=(int)$actor['hospital_id'];$actorId=(int)$actor['id'];
+        $q=$db->prepare('SELECT id,requester_id,encrypted_reason FROM leave_requests WHERE id=? AND hospital_id=? LIMIT 1');
+        $q->execute([$requestId,$hospital]);$leave=$q->fetch(PDO::FETCH_ASSOC);
+        if(!$leave)throw new RuntimeException('ไม่พบคำขอลา');
+        $self=(int)$leave['requester_id']===$actorId;
+        if(!$self){
+            if(!in_array((string)$actor['role'],['DIRECTOR','SUPERADMIN'],true))
+                throw new RuntimeException('ไม่มีสิทธิ์อ่านเหตุผลการลา');
+            $q=$db->prepare("SELECT 1 FROM approval_delegations WHERE delegate_user_id=?
+                AND approval_scope='LEAVE_APPROVAL' AND (hospital_id=? OR hospital_id IS NULL)
+                AND effective_from<=CURDATE() AND (effective_to IS NULL OR effective_to>=CURDATE())
+                AND order_reference<>'' AND evidence_uri<>'' LIMIT 1");
+            $q->execute([$actorId,$hospital]);if(!$q->fetchColumn())
+                throw new RuntimeException('ไม่มีคำสั่งมอบอำนาจอ่านเหตุผลการลาที่มีผล');
+        }
+        $reason=LeaveReasonCipher::decrypt($leave['encrypted_reason']);
+        self::audit($db,$hospital,$actorId,'READ_LEAVE_REASON',$requestId,['self_access'=>$self]);
+        return ['id'=>$requestId,'reason'=>$reason];
+    }
     public static function submit(array $actor,int $typeId,string $start,string $end,string $reason):int
     {
         $start=self::validDate($start);$end=self::validDate($end);
