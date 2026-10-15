@@ -27,6 +27,7 @@
     <a href="index.php?c=admin&a=staff_import" class="<?=($active ?? '')==='staff_import'?'active':''?>"><i class="bi bi-file-earmark-arrow-up"></i> นำเข้าบุคลากร</a>
     <a href="index.php?c=admin&a=hospitals" class="<?=($active ?? '')==='hospitals'?'active':''?>"><i class="bi bi-hospital"></i> จัดการหน่วยบริการ</a>
     <a href="index.php?c=duty&amp;a=index"><i class="bi bi-calendar2-week"></i> เวร ย/บ/ร (DEV)</a>
+    <a href="index.php?c=duty_rates&amp;a=index" class="<?=($active ?? '')==='duty_rates'?'active':''?>"><i class="bi bi-cash-coin"></i> ข้อเสนออัตราค่าตอบแทน</a>
     <a href="index.php?c=admin&a=skills" class="<?=($active ?? '')==='skills'?'active':''?>"><i class="bi bi-award"></i> ทักษะเวร</a>
   </nav>
   <?php if(!empty($flash)): ?><div class="alert alert-<?=e($flash['type']==='success'?'success':'danger')?> d-flex align-items-start gap-2" role="alert">
