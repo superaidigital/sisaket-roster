@@ -1,0 +1,56 @@
+name: Duty Phase 1 MySQL 8 Validation
+on:
+  push:
+    branches:
+      - feature/v13-readiness-dev-20261015
+  pull_request:
+    paths:
+      - 'database/**'
+      - 'tests/duty_*'
+      - '.github/workflows/duty-mysql8.yml'
+jobs:
+  phase1:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: local_ci_only
+          MYSQL_DATABASE: sisaket_roster_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -plocal_ci_only"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo_mysql, mbstring
+      - name: Initialize isolated CI schema (V11 only)
+        env:
+          MYSQL_PWD: local_ci_only
+        run: |
+          # schema.sql explicitly USEs sisaket_roster, so import its statements into the
+          # disposable CI schema after removing CREATE DATABASE and USE lines.
+          sed -e '/^CREATE DATABASE IF NOT EXISTS sisaket_roster /d' -e '/^USE sisaket_roster;/d' database/schema.sql | mysql -h 127.0.0.1 -u root sisaket_roster_ci
+      - name: Install Phase 1 migration in disposable CI schema
+        env:
+          MYSQL_PWD: local_ci_only
+        run: mysql -h 127.0.0.1 -u root sisaket_roster_ci < database/migrations/20261015_duty_foundation.sql
+      - name: Verify actual MySQL 8 tables, foreign keys, and DRAFT rates
+        env:
+          TEST_DB_HOST: 127.0.0.1
+          TEST_DB_NAME: sisaket_roster_ci
+          TEST_DB_USER: root
+          TEST_DB_PASSWORD: local_ci_only
+        run: php tests/duty_phase1_db_smoke.php
+      - name: Pure PHP policy and authorization regression
+        run: |
+          php tests/duty_foundation_test.php
+          php tests/duty_phase2_test.php
+          php tests/security_v11_test.php
