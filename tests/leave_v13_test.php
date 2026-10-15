@@ -23,7 +23,7 @@ foreach(['2026-02-30 08:30:00','2026-10-15 25:00:00','2026-10-15T08:30','2026-10
  try{L::validDate($d);ok(false,'invalid date '.$d);}catch(InvalidArgumentException $e){ok(true,'invalid date rejected');}
 }
 $router=file_get_contents(dirname(__DIR__).'/public/index.php');
-ok(str_contains($router,"'leave'=>['index','data','submit','decide']"),'strict leave route');
+ok(str_contains($router,"'leave'=>['index','data','detail','submit','decide']"),'strict leave route');
 $service=file_get_contents(dirname(__DIR__).'/app/Services/LeaveRequestService.php');
 ok(str_contains($service,"'LEAVE_APPROVAL'"),'separate mandate scope');
 ok(str_contains($service,"'PUBLISHED','LOCKED'"),'V11 and Duty overlap');
