@@ -74,7 +74,6 @@ final class LeaveRequestService
             $q->execute([$requestId,$hospital]);$leave=$q->fetch(PDO::FETCH_ASSOC);
             if(!$leave || $leave['status']!=='SUBMITTED')throw new RuntimeException('ใบลาไม่อยู่ในสถานะรอพิจารณา');
             if((int)$leave['requester_id']===$uid)throw new RuntimeException('ไม่สามารถอนุมัติใบลาของตนเอง');
-            $approved=\App\Services\DutyReviewService::hasDelegation($db,$actor,$hospital,date('Y-m-d'));
             // Separate legal scope; do not reuse a roster-approval delegation.
             $q=$db->prepare("SELECT 1 FROM approval_delegations WHERE delegate_user_id=? AND approval_scope='LEAVE_APPROVAL'
                 AND (hospital_id=? OR hospital_id IS NULL) AND effective_from<=CURDATE()
@@ -89,6 +88,23 @@ final class LeaveRequestService
                        AND da.start_at<? AND da.end_at>? LIMIT 1");
                 $q->execute([$staff,$end,$start]);
                 if($q->fetchColumn())throw new RuntimeException('พบเวรที่อนุมัติ/เผยแพร่แล้วทับช่วงวันลา ต้องดำเนินการปรับเวรก่อน');
+                // Published/locked V11 shifts are immutable; resolve shift coverage before approval.
+                $q=$db->prepare("SELECT re.work_date,st.start_time,st.end_time FROM roster_entries re
+                    JOIN rosters rr ON rr.id=re.roster_id
+                    JOIN shift_types st ON st.id=re.shift_type_id
+                    WHERE re.user_id=? AND rr.hospital_id=?
+                    AND rr.status IN ('PUBLISHED','LOCKED') AND st.is_working=1
+                    AND st.start_time IS NOT NULL AND st.end_time IS NOT NULL
+                    AND re.work_date BETWEEN DATE_SUB(DATE(?),INTERVAL 1 DAY) AND DATE(?)");
+                $q->execute([$staff,$hospital,$start,$end]);
+                foreach($q->fetchAll(PDO::FETCH_ASSOC) as $row){
+                    $rs=$row['work_date'].' '.$row['start_time'];
+                    $re=$row['work_date'].' '.$row['end_time'];
+                    if($re<=$rs)$re=(new DateTimeImmutable($re))->modify('+1 day')->format('Y-m-d H:i:s');
+                    if(DutyPolicy::overlaps($start,$end,$rs,$re))
+                        throw new RuntimeException('พบเวร V11 ที่เผยแพร่แล้วทับช่วงลา กรุณาจัดการเวรก่อนอนุมัติใบลา');
+                }
+
             }
             $q=$db->prepare("UPDATE leave_requests SET status=?,approver_id=?,approved_at=NOW() WHERE id=? AND status='SUBMITTED'");
             $q->execute([$decision,$uid,$requestId]);
