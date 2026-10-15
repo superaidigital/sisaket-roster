@@ -29,11 +29,13 @@ try{
         'duty_types','duty_rosters','duty_assignments','duty_audit_events',
         'approval_delegations','leave_requests','shift_swaps','swap_approvals',
         'compensation_rates','payroll_runs','payroll_logs',
-        'duty_rate_change_proposals','duty_rate_audit_events'];
+        'duty_rate_change_proposals','duty_rate_audit_events','duty_coverage_requirements'];
     $q=$db->query('SELECT DATABASE()');
     echo 'Database: '.(string)$q->fetchColumn().PHP_EOL;
     $q=$db->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name=? LIMIT 1');
     foreach($tables as $table){$q->execute([$table]);result('Table '.$table,(bool)$q->fetchColumn());}
+    $q=$db->query("SELECT COUNT(*) FROM duty_coverage_requirements WHERE skill_code='__TOTAL__'");
+    result('Explicit total-staff minima configured',(int)$q->fetchColumn()>0,'Required for V13 validation');
     $q=$db->query("SELECT COUNT(*) AS count FROM duty_rosters WHERE status='SUBMITTED'");
     echo 'Awaiting V13 review: '.(int)$q->fetchColumn().PHP_EOL;
     $q=$db->prepare("SELECT COUNT(*) FROM approval_delegations WHERE approval_scope=? AND effective_from<=CURDATE() AND (effective_to IS NULL OR effective_to>=CURDATE()) AND order_reference<>'' AND evidence_uri<>''");
