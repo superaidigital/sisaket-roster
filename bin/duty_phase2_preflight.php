@@ -10,7 +10,6 @@ if (PHP_SAPI !== 'cli') { http_response_code(403); exit('CLI only'); }
 require dirname(__DIR__).'/app/Core/bootstrap.php';
 
 use App\Core\Database;
-use PDOException;
 
 $failed = 0;
 function checkpoint(string $label, bool $ok, string $hint = ''): void {
