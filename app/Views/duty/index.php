@@ -2,103 +2,54 @@
 declare(strict_types=1);
 use App\Core\Csrf;
 ?>
-<!doctype html><html lang="th"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ตารางเวร ย/บ/ร (DEV) | อบจ.ศรีสะเกษ</title>
+<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ตารางเวรปฏิบัติงาน ย/บ/ร | อบจ.ศรีสะเกษ</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-<style>
-body{background:#f4f7fb;font-family:system-ui,'Sarabun',sans-serif;color:#183657}
-main{max-width:1500px;margin:auto;padding:1rem}.panel{background:white;border:1px solid #dce5f2;border-radius:14px;padding:1rem;box-shadow:0 5px 20px #1232}
-.scroll{overflow:auto;max-height:72vh}.duty-grid{border-collapse:separate;border-spacing:0;font-size:.78rem}
-.duty-grid th,.duty-grid td{border:1px solid #e2eaf4;padding:.35rem;min-width:68px;text-align:center}
-.duty-grid thead th{position:sticky;top:0;background:#e8f1ff;z-index:2}
-.duty-grid th:first-child{position:sticky;left:0;z-index:3;min-width:190px;background:#eef4fd;text-align:left}
-.duty-cell{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}
-.duty-cell button{min-width:25px;border-radius:5px;border:1px solid #c7d6e9;background:white}
-.duty-cell button.active{background:#1666ea;color:white}
-.duty-cell button:disabled{opacity:.7;cursor:default}
-#msg{min-height:2.5rem}
-</style></head><body>
-<main>
-<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
-<div><small class="text-primary fw-bold">SISAKET PAO · DEV PHASE 2</small><h1 class="h4">ตารางเวรปฏิบัติงาน ย / บ / ร</h1>
-<div class="text-secondary">ทดลองจัดตารางเวร Draft เท่านั้น · ยังไม่ใช้เบิกจ่ายเงินหรืออนุมัติคำสั่ง</div></div>
-<a class="btn btn-outline-primary" href="index.php?c=roster&a=index">กลับตารางเวร V11</a>
-</div>
-<div class="panel mb-3">
-<div class="row g-2 align-items-end">
-<div class="col-lg-5"><label class="form-label" for="hospital">หน่วยบริการ</label>
-<select id="hospital" class="form-select">
-<?php if($hospitals):foreach($hospitals as $hospital): ?>
-<option value="<?=(int)$hospital['id']?>"><?=e($hospital['name'])?></option>
-<?php endforeach;else: ?>
-<option value="<?=(int)$user['hospital_id']?>">หน่วยบริการของฉัน</option>
-<?php endif; ?>
+<link rel="stylesheet" href="css/duty-roster-v13.css"></head>
+<body><main class="duty-page" id="duty-page" data-view="table"><div class="duty-container">
+<header class="duty-header">
+<div><span class="duty-eyebrow">SISAKET PAO · DUTY MANAGEMENT</span><h1>ตารางเวรปฏิบัติงาน ย / บ / ร</h1>
+<p class="duty-subtitle">ระบบทดลองจัดเวรนอกเวลาราชการ — บันทึกเฉพาะ Draft ไม่ใช่คำสั่งอนุมัติหรือหลักฐานเบิกค่าตอบแทน</p></div>
+<div class="duty-header-actions"><a class="btn btn-outline-primary btn-sm" href="index.php?c=roster&a=index">← กลับตารางเวร V11</a></div>
+</header>
+<section class="surface duty-selectors" aria-label="เลือกหน่วยบริการและเดือน">
+<div class="duty-form-grid">
+<div><label for="hospital">หน่วยบริการ</label><select id="hospital" class="form-select">
+<?php if($hospitals):foreach($hospitals as $h): ?>
+<option value="<?=(int)$h['id']?>"><?=e($h['name'])?></option>
+<?php endforeach;else: ?><option value="<?=(int)$user['hospital_id']?>">หน่วยบริการของฉัน</option><?php endif; ?>
 </select></div>
-<div class="col-4 col-lg-2"><label class="form-label" for="month">เดือน</label>
-<select id="month" class="form-select">
-<?php for($m=1;$m<=12;$m++):?><option value="<?=$m?>" <?=$m===(int)date('n')?'selected':''?>><?=$m?></option><?php endfor; ?>
-</select></div>
-<div class="col-4 col-lg-2"><label class="form-label" for="year">ปี ค.ศ.</label><input id="year" type="number" class="form-control" min="2000" max="2100" value="<?=date('Y')?>"></div>
-<div class="col-4 col-lg-3 d-flex gap-1"><button id="refresh" class="btn btn-outline-primary flex-grow-1">แสดง</button><button id="create" class="btn btn-primary flex-grow-1">สร้าง Draft</button></div>
+<div><label for="month">เดือน</label><select id="month" class="form-select">
+<?php $months=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];for($m=1;$m<=12;$m++):?><option value="<?=$m?>" <?=$m===(int)date('n')?'selected':''?>><?=$months[$m-1]?></option><?php endfor; ?></select></div>
+<div><label for="year">ปี พ.ศ.</label><select id="year" class="form-select">
+<?php for($y=(int)date('Y')-2;$y<=(int)date('Y')+3;$y++):?><option value="<?=$y?>" <?=$y===(int)date('Y')?'selected':''?>><?=$y+543?></option><?php endfor; ?></select></div>
+<div class="duty-period-actions"><button class="btn btn-outline-secondary" id="previous" type="button" title="เดือนก่อน">←</button><button class="btn btn-outline-secondary" id="today" type="button">เดือนนี้</button><button class="btn btn-outline-secondary" id="next" type="button" title="เดือนถัดไป">→</button><button class="btn btn-primary" id="refresh" type="button">แสดงตาราง</button></div>
+</div></section>
+<div class="duty-workflow">สถานะการทำงาน: เลือกหน่วยบริการและเดือน → สร้าง Draft → คลิกเวร ย/บ/ร เพื่อบันทึกทีละรายการ → ตรวจข้อมูลก่อนนำเสนออนุมัติ</div>
+<section class="duty-stats" aria-label="สถิติตารางเวร">
+<div class="surface duty-stat" data-type="people"><div class="duty-stat-icon">คน</div><div><div class="label">บุคลากร</div><strong id="stat-people">0</strong></div></div>
+<div class="surface duty-stat"><div class="duty-stat-icon">∑</div><div><div class="label">รายการเวรทั้งหมด</div><strong id="stat-all">0</strong></div></div>
+<div class="surface duty-stat" data-type="ย"><div class="duty-stat-icon">ย</div><div><div class="label">เวรวันหยุด</div><strong id="stat-y">0</strong></div></div>
+<div class="surface duty-stat" data-type="บ"><div class="duty-stat-icon">บ</div><div><div class="label">เวรบ่าย</div><strong id="stat-b">0</strong></div></div>
+<div class="surface duty-stat" data-type="ร"><div class="duty-stat-icon">ร</div><div><div class="label">เวร On Call</div><strong id="stat-r">0</strong></div></div>
+<div class="surface duty-stat"><div class="duty-stat-icon">#</div><div><div class="label">Revision</div><strong id="stat-revision">—</strong></div></div>
+</section>
+<div class="duty-alert" id="msg" data-kind="loading" role="status" aria-live="polite">กำลังโหลดข้อมูล...</div>
+<section class="surface" aria-labelledby="heading">
+<div class="duty-toolbar"><div class="duty-toolbar-title"><h2 id="heading">ตารางเวร</h2><span class="duty-badge" id="status-badge">ยังไม่มี Draft</span><small id="meta"></small></div>
+<div class="duty-toolbar-actions"><button class="btn btn-sm btn-outline-secondary" id="table-mode" type="button" aria-pressed="true">▦ ตาราง</button><button class="btn btn-sm btn-outline-secondary" id="calendar-mode" type="button" aria-pressed="false">▣ รายบุคคล</button><button class="btn btn-sm btn-outline-secondary" id="fullscreen" type="button">⛶ เต็มจอ</button><button class="btn btn-sm btn-primary" id="create" type="button" hidden>+ สร้าง Draft</button></div></div>
+<div class="duty-filterbar">
+<div class="duty-filter"><label for="search">ค้นหาบุคลากร</label><input id="search" class="form-control" type="search" placeholder="ชื่อ / ตำแหน่ง"></div>
+<div class="duty-filter small"><label for="shift-filter">กรองเวร</label><select id="shift-filter" class="form-select"><option value="">เวรทั้งหมด</option><option value="ย">เวร ย</option><option value="บ">เวร บ</option><option value="ร">เวร ร</option></select></div>
+<div class="duty-legend"><span class="duty-pill" data-type="ย">ย · 08:30–16:30</span><span class="duty-pill" data-type="บ">บ · 16:31–20:30</span><span class="duty-pill" data-type="ร">ร · 20:31–08:29 (+1 วัน)</span></div>
 </div>
+<div class="duty-scroll" id="table-scroll" tabindex="0" aria-label="เลื่อนดูตารางเวรแนวนอน"><table id="grid" class="duty-table"><caption class="visually-hidden">ตารางเวรรายเดือน บุคลากรตามแถว วันที่ตามคอลัมน์</caption></table></div>
+<div id="calendar" class="duty-calendar">
+<div class="duty-calendar-toolbar"><div class="duty-filter"><label for="calendar-person">เลือกบุคลากร</label><select id="calendar-person" class="form-select"></select></div><div><strong id="calendar-summary">—</strong></div></div>
+<div class="duty-week-grid" id="calendar-grid"></div>
 </div>
-<div id="msg" role="status" aria-live="polite"></div>
-<div class="panel"><div class="d-flex justify-content-between flex-wrap mb-2 gap-2"><strong id="heading">รอโหลดตาราง</strong><span class="text-secondary" id="meta"></span></div>
-<div class="scroll"><table class="duty-grid" id="grid"><caption class="visually-hidden">ตารางเวรปฏิบัติงานรายเดือน</caption></table></div>
-<div class="text-secondary small mt-3">ย: 08.30–16.30 · บ: 16.31–20.30 · ร: 20.31–08.29 วันถัดไป ต้องตรวจสอบการปฏิบัติงานจริงก่อนคำนวณค่าตอบแทน</div>
-</div>
-</main>
-<script>
-(()=>{'use strict';
-const csrf=<?=json_encode(Csrf::token(),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
-const E=id=>document.getElementById(id);let snapshot=null,busy=false;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const query=()=>({hospital_id:+E('hospital').value,month:+E('month').value,year:+E('year').value});
-function status(s,bad=false){E('msg').innerHTML='<div class="alert alert-'+(bad?'danger':'info')+' py-2">'+esc(s)+'</div>';}
-async function request(action,data=null){
- const url='index.php?c=duty&a='+action+(data?'':'&'+new URLSearchParams(query()));
- const response=await fetch(url,{method:data?'POST':'GET',credentials:'same-origin',
- headers:{'Accept':'application/json',...(data?{'Content-Type':'application/json','X-CSRF-Token':csrf}:{})},
- ...(data?{body:JSON.stringify({...query(),...data})}:{})});
- const obj=await response.json();if(!response.ok||!obj.success)throw new Error(obj.message||'เกิดข้อผิดพลาด');
- return obj;
-}
-function render(){
- const r=snapshot?.roster,people=snapshot?.staff||[],types=snapshot?.types||[],entries=snapshot?.entries||[];
- const editable=snapshot?.can_edit&&r?.status==='DRAFT';
- E('create').hidden=!snapshot?.can_edit||!!r;
- E('heading').textContent=r?'Version '+r.version+' · '+r.status:'ยังไม่มีตารางเวร';
- E('meta').textContent=r?'Revision '+r.revision:'';
- const max=new Date(+E('year').value,+E('month').value,0).getDate();
- const marks=new Set(entries.map(v=>v.user_id+'|'+v.work_date+'|'+v.code));
- let html='<thead><tr><th scope="col">บุคลากร</th>';
- for(let d=1;d<=max;d++)html+='<th scope="col">'+d+'</th>';html+='</tr></thead><tbody>';
- for(const person of people){
- html+='<tr><th scope="row">'+esc(person.full_name)+'<small class="d-block text-secondary">'+esc(person.position)+'</small></th>';
- for(let d=1;d<=max;d++){
- const date=E('year').value+'-'+String(E('month').value).padStart(2,'0')+'-'+String(d).padStart(2,'0');
- html+='<td><div class="duty-cell">';
- for(const t of types){const active=marks.has(person.id+'|'+date+'|'+t.code);
- html+='<button type="button" class="'+(active?'active':'')+'" data-user="'+person.id+'" data-date="'+esc(date)+'" data-code="'+esc(t.code)+'" data-active="'+(active?'1':'0')+'" '+(editable?'':'disabled')+' aria-label="'+esc(person.full_name+' '+date+' '+t.name)+'" aria-pressed="'+(active?'true':'false')+'">'+esc(t.code)+'</button>';}
- html+='</div></td>';}
- html+='</tr>';}
- html+='</tbody>';E('grid').innerHTML=html;
-}
-async function load(){if(busy)return;try{status('กำลังโหลดข้อมูล...');snapshot=await request('data');render();status('โหลดตารางเรียบร้อย');}catch(e){status(e.message,true);}}
-async function save(button){
- if(busy||!snapshot?.roster||!snapshot?.can_edit)return;busy=true;
- try{status('กำลังตรวจสอบและบันทึก...');const result=await request('save',{
- user_id:+button.dataset.user,work_date:button.dataset.date,code:button.dataset.code,
- enabled:button.dataset.active!=='1',expected_revision:+snapshot.roster.revision});
- snapshot.roster.revision=result.revision;
- snapshot=await request('data');render();status('บันทึก Draft สำเร็จ');}
- catch(e){status(e.message,true);try{snapshot=await request('data');render();}catch(_){}}
- finally{busy=false;}
-}
-E('grid').addEventListener('click',e=>{const btn=e.target.closest('button[data-user]');if(btn)save(btn);});
-E('refresh').addEventListener('click',load);
-E('create').addEventListener('click',async()=>{if(busy)return;busy=true;try{await request('create',{});status('สร้าง Draft สำเร็จ');}catch(e){status(e.message,true);}finally{busy=false;load();}});
-load();
-})();
-</script></body></html>
+<footer class="duty-footer"><span id="footer-count">—</span><span>การบันทึกแต่ละครั้งตรวจสิทธิ์ เวรซ้อน วันลา วันหยุด และ Revision ที่ฝั่งเซิร์ฟเวอร์</span></footer>
+</section><p class="duty-note">เวร ย ใช้เฉพาะวันหยุดที่เข้าหลักเกณฑ์ • ยอดนับจากรายการเวรที่บันทึกแล้ว ไม่รวมเงินค่าตอบแทน • ร่างนี้ไม่ได้แก้ไขตาราง V11</p>
+</div></main>
+<script>window.DUTY_CSRF=<?=json_encode(Csrf::token(),JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;</script>
+<script src="js/duty-roster-v13.js" defer></script></body></html>

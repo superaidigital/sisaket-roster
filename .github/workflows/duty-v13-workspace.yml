@@ -1,0 +1,32 @@
+name: Duty V13 Responsive Workspace
+on:
+  push:
+    branches:
+      - feature/duty-v13-roster-ux-20261015
+  pull_request:
+    paths:
+      - 'app/Views/duty/index.php'
+      - 'public/js/duty-roster-v13.js'
+      - 'public/css/duty-roster-v13.css'
+      - '.github/workflows/duty-v13-workspace.yml'
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring,pdo_mysql
+      - name: Lint PHP and JavaScript
+        run: |
+          php -l app/Views/duty/index.php
+          php -l app/Controllers/DutyController.php
+          php -l app/Services/DutyRosterService.php
+          node --check public/js/duty-roster-v13.js
+      - name: Existing roster and document tests
+        run: |
+          php tests/duty_foundation_test.php
+          php tests/duty_phase2_test.php
+          php tests/duty_document_preview_test.php
+          php tests/security_v11_test.php
