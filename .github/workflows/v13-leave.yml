@@ -1,0 +1,33 @@
+name: V13 Encrypted Leave Requests
+on:
+  push:
+    branches: [feature/v13-release-candidate-workflows-20261015]
+  pull_request:
+    paths:
+      - 'app/Services/Leave*.php'
+      - 'app/Controllers/LeaveController.php'
+      - 'app/Views/leave/index.php'
+      - 'public/js/leave-v13.js'
+      - 'tests/leave_v13_test.php'
+      - '.github/workflows/v13-leave.yml'
+permissions:
+  contents: read
+jobs:
+  leave:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring,pdo_mysql,openssl
+      - name: PHP lint
+        run: |
+          for f in app/Services/LeaveReasonCipher.php app/Services/LeaveRequestService.php app/Controllers/LeaveController.php app/Views/leave/index.php tests/leave_v13_test.php; do php -l "$f"; done
+          node --check public/js/leave-v13.js
+      - name: Unit and source checks
+        run: |
+          php tests/leave_v13_test.php
+          php tests/duty_review_policy_test.php
+          php tests/duty_validation_test.php
+          php tests/security_v11_test.php
