@@ -33,6 +33,24 @@ final class DutyController {
             'entries'=>$r?D::entries((int)$r['id'],$readonly?(int)$u['id']:null):[],
             'can_edit'=>!$readonly && in_array($u['role'],['SUPERADMIN','ADMIN','SCHEDULER'],true) && ($r===null || $r['status']==='DRAFT')]);
     }
+    public function validate(): void {
+        [$u,$h,$year,$month]=$this->context($_GET);
+        $this->editor($u);
+        $r=D::current($h,$year,$month);
+        if(!$r)jsonError('ยังไม่มีตารางเวรสำหรับเดือนนี้',404);
+        $report=\App\Services\DutyRosterValidationService::report($r);
+        jsonOut(['success'=>true,'validation'=>$report]);
+    }
+    public function submit(): void {
+        requirePost();Csrf::check();$input=jsonBody();
+        [$u,$h,$year,$month]=$this->context($input);$this->editor($u);
+        $r=D::current($h,$year,$month);
+        if(!$r||$r['status']!=='DRAFT')jsonError('ไม่พบ Draft ที่ส่งตรวจได้',409);
+        $revision=intInput($input['expected_revision']??null,0,2147483647,'Revision');
+        try{$report=\App\Services\DutyRosterValidationService::submit($r,(int)$u['id'],$revision);}
+        catch(RuntimeException $e){jsonError($e->getMessage(),409);}
+        jsonOut(['success'=>true,'validation'=>$report,'message'=>'ส่งตารางเวรเข้ารอตรวจสอบแล้ว ยังไม่ใช่คำสั่งอนุมัติ']);
+    }
     public function create(): void {
         requirePost();Csrf::check();$input=jsonBody();
         [$u,$h,$year,$month]=$this->context($input);$this->editor($u);

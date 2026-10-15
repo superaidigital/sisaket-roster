@@ -12,7 +12,7 @@ $router=file_get_contents($root.'/public/index.php');
 $controller=file_get_contents($root.'/app/Controllers/DutyController.php');
 $service=file_get_contents($root.'/app/Services/DutyRosterService.php');
 $view=file_get_contents($root.'/app/Views/duty/index.php');
-dutyCheck(str_contains($router,"'duty'=>['index','data','create','save']"),'strict routes');
+dutyCheck(str_contains($router,"'duty'=>['index','data','create','save','validate','submit']"),'strict routes');
 dutyCheck(str_contains($router,'DutyController'),'controller dispatch');
 dutyCheck(str_contains($controller,'Csrf::check()'),'CSRF');
 dutyCheck(str_contains($controller,'Auth::hospitalId'),'tenant validation');
