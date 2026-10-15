@@ -1,0 +1,14 @@
+title = "Sisaket Roster - narrowly scoped non-secret example placeholders"
+
+[extend]
+useDefault = true
+
+# This is a literal instructional placeholder, not an encryption key.
+# Keep all built-in rules and history scans enabled. Both path AND exact line
+# must match, so real credentials anywhere else remain detectable.
+[allowlist]
+description = "Only the documented sensitive data key placeholder in config.example.php"
+condition = "AND"
+regexTarget = "line"
+paths = ['''^config\.example\.php$''']
+regexes = ['''^\s*'sensitive_data_key'\s*=>\s*'REPLACE_WITH_64_HEX_CHARACTERS',?\s*$''']

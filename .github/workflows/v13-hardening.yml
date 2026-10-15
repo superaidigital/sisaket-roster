@@ -1,0 +1,36 @@
+name: V13 Integrated Hardening
+on:
+  push:
+    branches: [feature/v13-integrated-hardening-20261015]
+  pull_request:
+    paths:
+      - 'app/Controllers/AuthController.php'
+      - 'app/Services/LoginThrottle.php'
+      - 'app/Services/ExcelExporter.php'
+      - 'tests/hardening_static_test.php'
+      - '.htaccess'
+      - '**/.htaccess'
+      - '.github/workflows/v13-hardening.yml'
+permissions:
+  contents: read
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring,pdo_mysql,zip
+      - name: PHP lint
+        run: |
+          php -l app/Controllers/AuthController.php
+          php -l app/Services/LoginThrottle.php
+          php -l app/Services/ExcelExporter.php
+          php -l tests/hardening_static_test.php
+      - name: Guards and regressions
+        run: |
+          php tests/hardening_static_test.php
+          php tests/security_v11_test.php
+          php tests/duty_validation_test.php
+          php tests/duty_phase2_test.php

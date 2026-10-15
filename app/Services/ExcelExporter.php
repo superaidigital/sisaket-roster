@@ -48,6 +48,14 @@ final class ExcelExporter {
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="'.$name.'.csv"');
         $out=fopen('php://output','w'); fwrite($out,"\xEF\xBB\xBF");
-        foreach($rows as $r) fputcsv($out,$r); fclose($out); exit;
+        foreach($rows as $r) {
+            $safe=array_map(static function ($value): string {
+                $s=(string)$value;
+                // CSV spreadsheet programs may interpret user-controlled text as formulas.
+                return preg_match('/^\\s*[=+\\-@]/u',$s) ? "'".$s : $s;
+            },$r);
+            fputcsv($out,$safe);
+        }
+        fclose($out); exit;
     }
 }

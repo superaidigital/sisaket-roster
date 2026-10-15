@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "(?i)^(?:config(?:\..*)?\.php|\.env(?:\..*)?|\.gitignore|.*\.(?:sql|bak|backup|log|dump|zip))$">
+    Require all denied
+</FilesMatch>

@@ -10,5 +10,7 @@ return [
         'session_name' => 'SSK_DUTY_PHASE2_SID',
         'cookie_secure' => false, // true when accessed with HTTPS
         'ip_hash_secret' => 'REPLACE_WITH_A_LONG_RANDOM_SECRET',
+        // 64 hex chars from random_bytes(32). Required to encrypt leave reasons.
+        'sensitive_data_key' => 'REPLACE_WITH_64_HEX_CHARACTERS',
     ],
 ];
