@@ -22,7 +22,7 @@ final class DutyRosterValidationService
     }
 
     /** Pure function suitable for regression tests without MySQL. */
-    public static function analyze(array $roster,array $staff,array $duties,array $leaves,array $others,array $v11,array $holidays): array
+    public static function analyze(array $roster,array $staff,array $duties,array $leaves,array $others,array $v11,array $holidays,array $requirements=[],array $verifiedSkills=[]): array
     {
         $year=(int)$roster['roster_year'];
         $month=(int)$roster['roster_month'];
@@ -96,6 +96,54 @@ final class DutyRosterValidationService
             }
         }
         if(!$entries)self::issue($issues,'CRITICAL','EMPTY_ROSTER','—','—','ยังไม่มีรายการเวร ไม่สามารถส่งตรวจได้');
+
+        // Fail closed if professional/total staffing rules have not been formally
+        // configured for an assigned V13 duty type. No minimum is inferred from job title.
+        $byDuty=[];
+        foreach($entries as $entry)$byDuty[$entry['date']][$entry['code']][$entry['uid']]=true;
+        $ruleIndex=[];
+        foreach($requirements as $req){
+            $code=(string)($req['duty_code']??'');
+            $skill=(string)($req['skill_code']??'');
+            if(!in_array($code,['ย','บ','ร'],true))continue;
+            $ruleIndex[$code][$skill]=$req;
+        }
+        $skillIndex=[];
+        foreach($verifiedSkills as $skill){
+            $uid=(int)($skill['user_id']??0);
+            $code=(string)($skill['skill_code']??'');
+            if(isset($active[$uid]) && $code!=='')$skillIndex[$uid][$code]=true;
+        }
+        foreach($byDuty as $date=>$groups)foreach($groups as $dutyCode=>$workers){
+            $rules=$ruleIndex[$dutyCode]??[];
+            if(!isset($rules['__TOTAL__'])){
+                self::issue($issues,'CRITICAL','COVERAGE_POLICY_MISSING',$date,'ทุกคน',
+                    'ยังไม่มีเกณฑ์อัตรากำลังขั้นต่ำพร้อมหลักฐานสำหรับเวร '.$dutyCode);
+                continue;
+            }
+            foreach($rules as $skillCode=>$req){
+                $minimum=(int)($req['min_count']??0);
+                if($minimum<0 || $minimum>100 || trim((string)($req['evidence_reference']??''))===''){
+                    self::issue($issues,'CRITICAL','COVERAGE_POLICY_INVALID',$date,'ทุกคน',
+                        'เกณฑ์บุคลากร/ทักษะยังไม่มีหลักฐานหรือจำนวนขั้นต่ำไม่ถูกต้อง');
+                    continue;
+                }
+                if($skillCode==='__TOTAL__')$actual=count($workers);
+                else{
+                    if(!isset(SkillPolicy::CATALOG[$skillCode])){
+                        self::issue($issues,'CRITICAL','UNKNOWN_SKILL_POLICY',$date,'ทุกคน','พบรหัสทักษะที่ไม่รองรับ');
+                        continue;
+                    }
+                    $actual=0;
+                    foreach($workers as $uid=>$_)if(!empty($skillIndex[(int)$uid][$skillCode]))$actual++;
+                }
+                if($actual<$minimum){
+                    self::issue($issues,'CRITICAL','SKILL_COVERAGE_GAP',$date,'ทุกคน',
+                        'เวร '.$dutyCode.' ทักษะ '.$skillCode.' ต้องมีอย่างน้อย '.$minimum.' คน แต่พบ '.$actual.' คน');
+                }
+            }
+        }
+
         // Rest is a review prompt, not an invented mandatory legal minimum.
         $byPerson=[];
         foreach($entries as $e)$byPerson[$e['uid']][]=$e;
@@ -161,9 +209,16 @@ final class DutyRosterValidationService
         $v11->execute([$hospital,$prev,$end]);
         $holidays=$db->prepare('SELECT holiday_date FROM holidays WHERE (hospital_id IS NULL OR hospital_id=?) AND holiday_date>=? AND holiday_date<?');
         $holidays->execute([$hospital,$begin,$end]);
+        $coverage=$db->prepare("SELECT dt.code AS duty_code,r.skill_code,r.min_count,r.evidence_reference
+            FROM duty_coverage_requirements r JOIN duty_types dt ON dt.id=r.duty_type_id
+            WHERE r.hospital_id=?");
+        $coverage->execute([$hospital]);
+        $skills=$db->prepare('SELECT user_id,skill_code FROM roster_staff_skills WHERE hospital_id=?');
+        $skills->execute([$hospital]);
         return self::analyze($roster,$staff->fetchAll(PDO::FETCH_ASSOC),$duties->fetchAll(PDO::FETCH_ASSOC),
             $leaves->fetchAll(PDO::FETCH_ASSOC),$others->fetchAll(PDO::FETCH_ASSOC),
-            $v11->fetchAll(PDO::FETCH_ASSOC),$holidays->fetchAll(PDO::FETCH_ASSOC));
+            $v11->fetchAll(PDO::FETCH_ASSOC),$holidays->fetchAll(PDO::FETCH_ASSOC),
+            $coverage->fetchAll(PDO::FETCH_ASSOC),$skills->fetchAll(PDO::FETCH_ASSOC));
     }
 
     /** Transactional gate. Changes only this selected DRAFT roster and appends an audit record. */
