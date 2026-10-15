@@ -26,6 +26,7 @@ try {
         'duty_rates'=>['index','data','propose'],
         'leave'=>['index','data','detail','submit','decide'],
         'swap'=>['index','data','request','consent','review','reason'],
+        'duty_coverage'=>['index','data','save'],
         'duty_docs'=>['preview'],
         'roster'=>['index','data','create','save_shift','bulk_save','validate','auto_preview','auto_apply','repair_preview','repair_apply','fairness_preview','fairness_apply',
             'copy_preview','copy_apply','submit','approve','reject','publish','lock','new_revision',
@@ -39,6 +40,7 @@ try {
         'duty_rates'=>new App\Controllers\DutyRateAdminController(),
         'leave'=>new App\Controllers\LeaveController(),
         'swap'=>new App\Controllers\SwapController(),
+        'duty_coverage'=>new App\Controllers\DutyCoverageController(),
         'duty_docs'=>new App\Controllers\DutyDocumentsController(),
         default=>new App\Controllers\RosterController(),
     };
