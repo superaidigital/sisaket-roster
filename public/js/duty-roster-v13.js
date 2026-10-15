@@ -45,6 +45,7 @@ let html='';const first=weekday(1);for(let i=0;i<first;i++)html+='<div class="du
 for(let d=1;d<=limit;d++){const w=weekday(d);html+='<div class="duty-day" data-weekend="'+(w===0||w===6)+'"><div class="date">'+d+'<span class="dow">'+dow[w]+'</span></div><div class="duty-toggles">'+['ย','บ','ร'].map(c=>toggle(chosen.id,chosen.full_name,d,c,mark)).join('')+'</div></div>';}
 $('calendar-grid').innerHTML=html;}
 function render(){const s=state.snapshot;if(!s)return;const r=s.roster;
+$('validate').hidden=!(r&&s.can_edit);$('submit').hidden=!(r&&r.status==='DRAFT'&&s.can_edit);
 $('heading').textContent=r?'ตารางเวร Version '+r.version:'ยังไม่มีตารางเวรในเดือนที่เลือก';
 $('status-badge').textContent=r?r.status:'ยังไม่มี Draft';$('status-badge').dataset.status=r?.status||'NONE';
 $('meta').textContent=r?'Revision '+r.revision+' · '+state.period.month+'/'+(state.period.year+543):'เลือกสร้าง Draft เพื่อเริ่มจัดเวร';
@@ -52,11 +53,11 @@ $('create').hidden=!(s.can_edit&&!r);
 stats();renderTable();renderCalendar();}
 async function load(){if(state.busy)return;const p=selected(),seq=++state.loadSeq;state.controller?.abort();state.controller=new AbortController();const controller=state.controller;
 notify('กำลังโหลดข้อมูล…','loading');
-try{const data=await api('data',p,null,controller.signal);if(seq!==state.loadSeq)return;state.period=p;state.snapshot=data;render();notify('โหลดข้อมูลตารางเรียบร้อย','success');}
+try{const data=await api('data',p,null,controller.signal);if(seq!==state.loadSeq)return;state.period=p;state.snapshot=data;$('validation-panel').hidden=true;render();notify('โหลดข้อมูลตารางเรียบร้อย','success');}
 catch(e){if(e.name==='AbortError'||seq!==state.loadSeq)return;state.snapshot=null;state.period=null;$('grid').innerHTML='';$('calendar-grid').innerHTML='';notify(e.message,'error');}}
 async function mutate(action,payload){if(state.busy||!same(selected(),state.period))return;const period={...state.period};lock(true);notify('กำลังตรวจสอบและบันทึกข้อมูล…','loading');try{
 await api(action,period,payload);
-const data=await api('data',period);state.snapshot=data;render();notify(action==='create'?'สร้าง Draft สำเร็จ':'บันทึกเวรสำเร็จ','success');
+const data=await api('data',period);state.snapshot=data;$('validation-panel').hidden=true;render();notify(action==='create'?'สร้าง Draft สำเร็จ':'บันทึกเวรสำเร็จ','success');
 }catch(e){notify(e.message,'error');try{state.snapshot=await api('data',period);render();}catch(_){/* keep error visible */}}
 finally{lock(false);}}
 function step(delta){const d=new Date(Date.UTC(Number($('year').value),Number($('month').value)-1+delta,1));const yr=d.getUTCFullYear(),mo=d.getUTCMonth()+1;if(yr<Number($('year').options[0].value)||yr>Number($('year').options[$('year').options.length-1].value))return;$('year').value=yr;$('month').value=mo;load();}
@@ -73,5 +74,14 @@ document.addEventListener('fullscreenchange',()=>{$('fullscreen').textContent=do
 $('create').addEventListener('click',()=>mutate('create',{}));
 function cellClick(ev){const btn=ev.target.closest('.duty-toggle');if(!btn||!editable()||state.busy)return;mutate('save',{user_id:Number(btn.dataset.user),work_date:btn.dataset.date,code:btn.dataset.code,enabled:btn.dataset.active!=='1',expected_revision:Number(state.snapshot.roster.revision)});}
 $('grid').addEventListener('click',cellClick);$('calendar-grid').addEventListener('click',cellClick);
+
+function showValidation(result){const v=result.validation;const panel=$('validation-panel'),box=$('validation-issues');
+panel.hidden=false;$('validation-summary').textContent='Critical '+v.critical+' · Warning '+v.warning+' · '+v.assignment_count+' รายการเวร · '+v.notice;
+const table=document.createElement('table');table.className='table table-sm table-striped';
+const head=document.createElement('thead');const tr=document.createElement('tr');for(const name of ['ระดับ','วันที่','บุคลากร','เหตุผล']){const th=document.createElement('th');th.textContent=name;tr.append(th);}head.append(tr);table.append(head);
+const body=document.createElement('tbody');for(const item of v.issues){const row=document.createElement('tr');for(const key of ['severity','work_date','person','message']){const td=document.createElement('td');td.textContent=item[key];row.append(td);}body.append(row);}table.append(body);box.replaceChildren(table);
+return v;}
+$('validate').addEventListener('click',async()=>{if(state.busy||!state.period)return;lock(true);try{const result=await api('validate',state.period);const v=showValidation(result);notify(v.critical?'พบข้อผิดพลาด Critical '+v.critical+' รายการ':'ผ่านการตรวจทางเทคนิค ยังต้องตรวจความพร้อมของผู้ปฏิบัติงาน','info');}catch(e){notify(e.message,'error');}finally{lock(false);}});
+$('submit').addEventListener('click',async()=>{if(state.busy||!editable()||!state.period)return;try{const result=await api('validate',state.period);const v=showValidation(result);if(v.critical>0){notify('ต้องแก้ Critical '+v.critical+' รายการก่อนส่งตรวจ','error');return;}if(!confirm('ยืนยันส่ง Draft เข้ารอตรวจสอบ? เมื่อส่งแล้วจะไม่สามารถแก้ไข Draft นี้ได้ และยังไม่ใช่การอนุมัติคำสั่ง'))return;await mutate('submit',{expected_revision:Number(state.snapshot.roster.revision)});}catch(e){notify(e.message,'error');}});
 load();
 })();
